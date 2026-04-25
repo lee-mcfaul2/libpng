@@ -9,8 +9,26 @@
  * and license in png.h
  */
 
+#include <stdio.h>
+#include <stdint.h>
+#include "../pngpriv.h"
+
+#ifdef PNG_READ_SUPPORTED
+
+/* This code requires -maltivec and -mvsx on the command line: */
+#if PNG_POWERPC_VSX_IMPLEMENTATION == 1 /* intrinsics code from pngpriv.h */
+
+#include <altivec.h>
+
+#if PNG_POWERPC_VSX_OPT > 0
+
+#ifndef __VSX__
+#  error This code requires VSX support (POWER7 and later); please compile with -mvsx
+#endif
+
 #define vec_ld_unaligned(vec,data) vec = vec_vsx_ld(0,data)
 #define vec_st_unaligned(vec,data) vec_vsx_st(vec,0,data)
+
 
 /* Functions in this file look at most 3 pixels (a,b,c) to predict the 4th (d).
  * They're positioned like this:
@@ -23,8 +41,8 @@
 
 #define vsx_declare_common_vars(row_info,row,prev_row,offset) \
    png_byte i;\
-   png_byte *rp = row + offset;\
-   const png_byte *pp = prev_row;\
+   png_bytep rp = row + offset;\
+   png_const_bytep pp = prev_row;\
    size_t unaligned_top = 16 - (((size_t)rp % 16));\
    size_t istop;\
    if(unaligned_top == 16)\
@@ -37,9 +55,8 @@
       istop = 0;\
    }
 
-static void
-png_read_filter_row_up_vsx(png_row_info *row_info, png_byte *row,
-   const png_byte *prev_row)
+void png_read_filter_row_up_vsx(png_row_infop row_info, png_bytep row,
+                                png_const_bytep prev_row)
 {
    vector unsigned char rp_vec;
    vector unsigned char pp_vec;
@@ -80,7 +97,8 @@ png_read_filter_row_up_vsx(png_row_info *row_info, png_byte *row,
          *rp = (png_byte)(((int)(*rp) + (int)(*pp++)) & 0xff);
          rp++;
       }
-   }
+}
+
 }
 
 static const vector unsigned char VSX_LEFTSHIFTED1_4 = {16,16,16,16, 0, 1, 2, 3,16,16,16,16,16,16,16,16};
@@ -153,9 +171,8 @@ static const vector unsigned char VSX_SHORT_TO_CHAR4_3 = {16,16,16,16,16,16,16,1
 #  define vsx_abs(number) (number > 0) ? (number) : -(number)
 #endif
 
-static void
-png_read_filter_row_sub4_vsx(png_row_info *row_info, png_byte *row,
-   const png_byte *prev_row)
+void png_read_filter_row_sub4_vsx(png_row_infop row_info, png_bytep row,
+                                  png_const_bytep prev_row)
 {
    png_byte bpp = 4;
 
@@ -211,9 +228,8 @@ png_read_filter_row_sub4_vsx(png_row_info *row_info, png_byte *row,
 
 }
 
-static void
-png_read_filter_row_sub3_vsx(png_row_info *row_info, png_byte *row,
-   const png_byte *prev_row)
+void png_read_filter_row_sub3_vsx(png_row_infop row_info, png_bytep row,
+                                  png_const_bytep prev_row)
 {
    png_byte bpp = 3;
 
@@ -276,9 +292,8 @@ png_read_filter_row_sub3_vsx(png_row_info *row_info, png_byte *row,
       }
 }
 
-static void
-png_read_filter_row_avg4_vsx(png_row_info *row_info, png_byte *row,
-   const png_byte *prev_row)
+void png_read_filter_row_avg4_vsx(png_row_infop row_info, png_bytep row,
+                                  png_const_bytep prev_row)
 {
    png_byte bpp = 4;
 
@@ -364,9 +379,8 @@ png_read_filter_row_avg4_vsx(png_row_info *row_info, png_byte *row,
       }
 }
 
-static void
-png_read_filter_row_avg3_vsx(png_row_info *row_info, png_byte *row,
-   const png_byte *prev_row)
+void png_read_filter_row_avg3_vsx(png_row_infop row_info, png_bytep row,
+                                  png_const_bytep prev_row)
 {
   png_byte bpp = 3;
 
@@ -483,9 +497,8 @@ png_read_filter_row_avg3_vsx(png_row_info *row_info, png_byte *row,
       *rp++ = (png_byte)a;\
       }
 
-static void
-png_read_filter_row_paeth4_vsx(png_row_info *row_info, png_byte *row,
-   const png_byte *prev_row)
+void png_read_filter_row_paeth4_vsx(png_row_infop row_info, png_bytep row,
+   png_const_bytep prev_row)
 {
    png_byte bpp = 4;
 
@@ -604,9 +617,8 @@ png_read_filter_row_paeth4_vsx(png_row_info *row_info, png_byte *row,
       }
 }
 
-static void
-png_read_filter_row_paeth3_vsx(png_row_info *row_info, png_byte *row,
-   const png_byte *prev_row)
+void png_read_filter_row_paeth3_vsx(png_row_infop row_info, png_bytep row,
+   png_const_bytep prev_row)
 {
   png_byte bpp = 3;
 
@@ -750,3 +762,7 @@ png_read_filter_row_paeth3_vsx(png_row_info *row_info, png_byte *row,
         vsx_paeth_process(rp,pp,a,b,c,pa,pb,pc,bpp)
      }
 }
+
+#endif /* PNG_POWERPC_VSX_OPT > 0 */
+#endif /* PNG_POWERPC_VSX_IMPLEMENTATION == 1 (intrinsics) */
+#endif /* READ */

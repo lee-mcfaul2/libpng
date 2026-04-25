@@ -169,9 +169,9 @@ floorb(double d)
 typedef struct chunk_insert
 {
    struct chunk_insert *next;
-   void               (*insert)(png_struct *, png_info *, int, char **);
+   void               (*insert)(png_structp, png_infop, int, png_charpp);
    int                  nparams;
-   char *               parameters[1];
+   png_charp            parameters[1];
 } chunk_insert;
 
 static unsigned int
@@ -233,9 +233,9 @@ image_size_of_type(int color_type, int bit_depth, unsigned int *colors,
 }
 
 static void
-set_color(png_color *color, png_byte *trans, unsigned int red,
+set_color(png_colorp color, png_bytep trans, unsigned int red,
    unsigned int green, unsigned int blue, unsigned int alpha,
-   const png_byte *gamma_table)
+   png_const_bytep gamma_table)
 {
    color->red = gamma_table[red];
    color->green = gamma_table[green];
@@ -244,8 +244,8 @@ set_color(png_color *color, png_byte *trans, unsigned int red,
 }
 
 static int
-generate_palette(png_color *palette, png_byte *trans, int bit_depth,
-   const png_byte *gamma_table, unsigned int *colors)
+generate_palette(png_colorp palette, png_bytep trans, int bit_depth,
+   png_const_bytep gamma_table, unsigned int *colors)
 {
    /*
     * 1-bit: entry 0 is transparent-red, entry 1 is opaque-white
@@ -327,8 +327,8 @@ generate_palette(png_color *palette, png_byte *trans, int bit_depth,
 }
 
 static void
-set_value(png_byte *row, size_t rowbytes, png_uint_32 x, unsigned int bit_depth,
-   png_uint_32 value, const png_byte *gamma_table, double conv)
+set_value(png_bytep row, size_t rowbytes, png_uint_32 x, unsigned int bit_depth,
+   png_uint_32 value, png_const_bytep gamma_table, double conv)
 {
    unsigned int mask = (1U << bit_depth)-1;
 
@@ -388,8 +388,8 @@ set_value(png_byte *row, size_t rowbytes, png_uint_32 x, unsigned int bit_depth,
 }
 
 static int /* filter mask for row */
-generate_row(png_byte *row, size_t rowbytes, unsigned int y, int color_type,
-   int bit_depth, const png_byte *gamma_table, double conv,
+generate_row(png_bytep row, size_t rowbytes, unsigned int y, int color_type,
+   int bit_depth, png_const_bytep gamma_table, double conv,
    unsigned int *colors, int small)
 {
    int filters = 0; /* file *MASK*, 0 means the default, not NONE */
@@ -745,8 +745,8 @@ generate_row(png_byte *row, size_t rowbytes, unsigned int y, int color_type,
 }
 
 
-static void
-makepng_warning(png_struct *png_ptr, const char *message)
+static void PNGCBAPI
+makepng_warning(png_structp png_ptr, png_const_charp message)
 {
    const char **ep = png_get_error_ptr(png_ptr);
    const char *name;
@@ -760,8 +760,8 @@ makepng_warning(png_struct *png_ptr, const char *message)
   fprintf(stderr, "%s: warning: %s\n", name, message);
 }
 
-static void
-makepng_error(png_struct *png_ptr, const char *message)
+static void PNGCBAPI
+makepng_error(png_structp png_ptr, png_const_charp message)
 {
    makepng_warning(png_ptr, message);
    png_longjmp(png_ptr, 1);
@@ -772,10 +772,10 @@ write_png(const char **name, FILE *fp, int color_type, int bit_depth,
    volatile png_fixed_point gamma, chunk_insert * volatile insert,
    unsigned int filters, unsigned int *colors, int small, int tRNS)
 {
-   png_struct *png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING,
+   png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING,
       name, makepng_error, makepng_warning);
-   png_info * volatile info_ptr = NULL;
-   png_byte * volatile row = NULL;
+   volatile png_infop info_ptr = NULL;
+   volatile png_bytep row = NULL;
 
    if (png_ptr == NULL)
    {
@@ -785,8 +785,8 @@ write_png(const char **name, FILE *fp, int color_type, int bit_depth,
 
    if (setjmp(png_jmpbuf(png_ptr)))
    {
-      png_struct *nv_ptr = png_ptr;
-      png_info *nv_info = info_ptr;
+      png_structp nv_ptr = png_ptr;
+      png_infop nv_info = info_ptr;
 
       png_ptr = NULL;
       info_ptr = NULL;
@@ -984,8 +984,8 @@ write_png(const char **name, FILE *fp, int color_type, int bit_depth,
    png_write_end(png_ptr, info_ptr);
 
    {
-      png_struct *nv_ptr = png_ptr;
-      png_info *nv_info = info_ptr;
+      png_structp nv_ptr = png_ptr;
+      png_infop nv_info = info_ptr;
 
       png_ptr = NULL;
       info_ptr = NULL;
@@ -997,7 +997,7 @@ write_png(const char **name, FILE *fp, int color_type, int bit_depth,
 
 
 static size_t
-load_file(const char *name, png_byte **result)
+load_file(png_const_charp name, png_bytepp result)
 {
    FILE *fp = tmpfile();
 
@@ -1044,7 +1044,7 @@ load_file(const char *name, png_byte **result)
                   /* Round up to a multiple of 4 here to allow an iCCP profile
                    * to be padded to a 4x boundary.
                    */
-                  png_byte *data = malloc((total+3)&~3);
+                  png_bytep data = malloc((total+3)&~3);
 
                   if (data != NULL)
                   {
@@ -1099,7 +1099,7 @@ load_file(const char *name, png_byte **result)
 }
 
 static size_t
-load_fake(char *param, png_byte **profile)
+load_fake(png_charp param, png_bytepp profile)
 {
    char *endptr = NULL;
    uint64_t size = strtoull(param, &endptr, 0/*base*/);
@@ -1115,7 +1115,7 @@ load_fake(char *param, png_byte **profile)
       /* Now repeat that string to fill 'size' bytes. */
       if (result == size && (*profile = malloc(result)) != NULL)
       {
-         png_byte *out = *profile;
+         png_bytep out = *profile;
 
          if (len == 1)
             memset(out, *endptr, result);
@@ -1155,10 +1155,10 @@ check_param_count(int nparams, int expect)
 }
 
 static void
-insert_iCCP(png_struct *png_ptr, png_info *info_ptr, int nparams,
-   char **params)
+insert_iCCP(png_structp png_ptr, png_infop info_ptr, int nparams,
+   png_charpp params)
 {
-   png_byte *profile = NULL;
+   png_bytep profile = NULL;
    png_uint_32 proflen = 0;
    int result;
 
@@ -1248,7 +1248,7 @@ insert_iCCP(png_struct *png_ptr, png_info *info_ptr, int nparams,
 }
 
 static void
-clear_text(png_text *text, char *keyword)
+clear_text(png_text *text, png_charp keyword)
 {
    text->compression = -1; /* none */
    text->key = keyword;
@@ -1260,29 +1260,30 @@ clear_text(png_text *text, char *keyword)
 }
 
 static void
-set_text(png_struct *png_ptr, png_info *info_ptr, png_text *text, char *param)
+set_text(png_structp png_ptr, png_infop info_ptr, png_textp text,
+   png_charp param)
 {
    switch (param[0])
    {
       case '<':
          {
-            png_byte *file = NULL;
+            png_bytep file = NULL;
 
             text->text_length = load_file(param+1, &file);
-            text->text = (char *)file;
+            text->text = (png_charp)file;
          }
          break;
 
       case '0': case '1': case '2': case '3': case '4':
       case '5': case '6': case '7': case '8': case '9':
          {
-            png_byte *data = NULL;
+            png_bytep data = NULL;
             size_t fake_len = load_fake(param, &data);
 
             if (fake_len > 0) /* else a simple parameter */
             {
                text->text_length = fake_len;
-               text->text = (char *)data;
+               text->text = (png_charp)data;
                break;
             }
          }
@@ -1299,8 +1300,8 @@ set_text(png_struct *png_ptr, png_info *info_ptr, png_text *text, char *param)
 }
 
 static void
-insert_tEXt(png_struct *png_ptr, png_info *info_ptr, int nparams,
-   char **params)
+insert_tEXt(png_structp png_ptr, png_infop info_ptr, int nparams,
+   png_charpp params)
 {
    png_text text;
 
@@ -1310,8 +1311,8 @@ insert_tEXt(png_struct *png_ptr, png_info *info_ptr, int nparams,
 }
 
 static void
-insert_zTXt(png_struct *png_ptr, png_info *info_ptr, int nparams,
-   char **params)
+insert_zTXt(png_structp png_ptr, png_infop info_ptr, int nparams,
+   png_charpp params)
 {
    png_text text;
 
@@ -1322,8 +1323,8 @@ insert_zTXt(png_struct *png_ptr, png_info *info_ptr, int nparams,
 }
 
 static void
-insert_iTXt(png_struct *png_ptr, png_info *info_ptr, int nparams,
-   char **params)
+insert_iTXt(png_structp png_ptr, png_infop info_ptr, int nparams,
+   png_charpp params)
 {
    png_text text;
 
@@ -1336,8 +1337,8 @@ insert_iTXt(png_struct *png_ptr, png_info *info_ptr, int nparams,
 }
 
 static void
-insert_hIST(png_struct *png_ptr, png_info *info_ptr, int nparams,
-   char **params)
+insert_hIST(png_structp png_ptr, png_infop info_ptr, int nparams,
+      png_charpp params)
 {
    int i;
    png_uint_16 freq[256];
@@ -1365,7 +1366,7 @@ insert_hIST(png_struct *png_ptr, png_info *info_ptr, int nparams,
 }
 
 static png_byte
-bval(const png_struct *png_ptr, char *param, unsigned int maxval)
+bval(png_const_structrp png_ptr, png_charp param, unsigned int maxval)
 {
    char *endptr = NULL;
    unsigned long int l = strtoul(param, &endptr, 0/*base*/);
@@ -1378,8 +1379,8 @@ bval(const png_struct *png_ptr, char *param, unsigned int maxval)
 }
 
 static void
-insert_sBIT(png_struct *png_ptr, png_info *info_ptr, int nparams,
-   char **params)
+insert_sBIT(png_structp png_ptr, png_infop info_ptr, int nparams,
+      png_charpp params)
 {
    int ct = png_get_color_type(png_ptr, info_ptr);
    int c = (ct & PNG_COLOR_MASK_COLOR ? 3 : 1) +
@@ -1416,14 +1417,15 @@ insert_sBIT(png_struct *png_ptr, png_info *info_ptr, int nparams,
 
 #if 0
 static void
-insert_sPLT(png_struct *png_ptr, png_info *info_ptr, int nparams, char **params)
+insert_sPLT(png_structp png_ptr, png_infop info_ptr, int nparams, png_charpp params)
 {
    fprintf(stderr, "insert sPLT: NYI\n");
 }
 #endif
 
 static int
-find_parameters(const char *what, char *param, char **list, int nparams)
+find_parameters(png_const_charp what, png_charp param, png_charp *list,
+   int nparams)
 {
    /* Parameters are separated by '\n' or ':' characters, up to nparams are
     * accepted (more is an error) and the number found is returned.
@@ -1453,22 +1455,22 @@ find_parameters(const char *what, char *param, char **list, int nparams)
 }
 
 static void
-bad_parameter_count(const char *what, int nparams)
+bad_parameter_count(png_const_charp what, int nparams)
 {
    fprintf(stderr, "--insert %s: bad parameter count %d\n", what, nparams);
    exit(1);
 }
 
 static chunk_insert *
-make_insert(const char *what,
-   void (*insert)(png_struct *, png_info *, int, char **),
-   int nparams, char **list)
+make_insert(png_const_charp what,
+   void (*insert)(png_structp, png_infop, int, png_charpp),
+   int nparams, png_charpp list)
 {
    int i;
    chunk_insert *cip;
 
    cip = malloc(offsetof(chunk_insert,parameters) +
-      nparams * sizeof (char *));
+      nparams * sizeof (png_charp));
 
    if (cip == NULL)
    {
@@ -1487,10 +1489,10 @@ make_insert(const char *what,
 }
 
 static chunk_insert *
-find_insert(const char *what, char *param)
+find_insert(png_const_charp what, png_charp param)
 {
    png_uint_32 chunk = 0;
-   char *parameter_list[1024];
+   png_charp parameter_list[1024];
    int i, nparams;
 
    /* Assemble the chunk name */
@@ -1566,27 +1568,27 @@ find_insert(const char *what, char *param)
 /* This is necessary because libpng expects writeable strings for things like
  * text chunks (maybe this should be fixed...)
  */
-static char *
-strstash(const char *foo)
+static png_charp
+strstash(png_const_charp foo)
 {
    /* The program indicates a memory allocation error by crashing, this is by
     * design.
     */
    if (foo != NULL)
    {
-      char *bar = malloc(strlen(foo)+1);
+      png_charp bar = malloc(strlen(foo)+1);
       return strcpy(bar, foo);
    }
 
    return NULL;
 }
 
-static char *
-strstash_list(const char * const *text)
+static png_charp
+strstash_list(const png_const_charp *text)
 {
    size_t foo = 0;
-   char *result, *bar;
-   const char * const *line = text;
+   png_charp result, bar;
+   const png_const_charp *line = text;
 
    while (*line != NULL)
       foo += strlen(*line++);
@@ -1609,10 +1611,10 @@ strstash_list(const char * const *text)
  * have \n unlike the --insert option.
  */
 static chunk_insert *
-add_tEXt(const char *key, const char * const *text)
+add_tEXt(const char *key, const png_const_charp *text)
 {
    static char what[5] = { 116, 69, 88, 116, 0 };
-   char *parameter_list[3];
+   png_charp parameter_list[3];
 
    parameter_list[0] = strstash(key);
    parameter_list[1] = strstash_list(text);
@@ -1623,10 +1625,10 @@ add_tEXt(const char *key, const char * const *text)
 
 static chunk_insert *
 add_iTXt(const char *key, const char *language, const char *language_key,
-   const char * const *text)
+      const png_const_charp *text)
 {
    static char what[5] = { 105, 84, 88, 116, 0 };
-   char *parameter_list[5];
+   png_charp parameter_list[5];
 
    parameter_list[0] = strstash(key);
    parameter_list[1] = strstash(language);
@@ -1744,8 +1746,8 @@ main(int argc, char **argv)
 
       if (argc >= 3 && strcmp(arg, "--insert") == 0)
       {
-         const char *what = *++argv;
-         char *param = *++argv;
+         png_const_charp what = *++argv;
+         png_charp param = *++argv;
          chunk_insert *new_insert;
 
          argc -= 2;
@@ -1906,12 +1908,12 @@ main(int argc, char **argv)
 
    /* Insert standard copyright and licence text. */
    {
-      static const char *copyright[] =
+      static png_const_charp copyright[] =
       {
          COPYRIGHT, /* ISO-Latin-1 */
          NULL
       };
-      static const char *licensing[] =
+      static png_const_charp licensing[] =
       {
          IMAGE_LICENSING, /* UTF-8 */
          NULL

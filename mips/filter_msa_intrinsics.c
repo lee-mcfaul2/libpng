@@ -8,6 +8,15 @@
  * For conditions of distribution and use, see the disclaimer
  * and license in png.h
  */
+
+#include <stdio.h>
+#include "../pngpriv.h"
+
+#ifdef PNG_READ_SUPPORTED
+
+/* This code requires -mfpu=msa on the command line: */
+#if PNG_MIPS_MSA_IMPLEMENTATION == 1 /* intrinsics code from pngpriv.h */
+
 #include <msa.h>
 #include <stdint.h>
 
@@ -26,6 +35,8 @@
  */
 #define png_ldr(type,pointer)\
    (temp_pointer = png_ptr(type,pointer), *temp_pointer)
+
+#if PNG_MIPS_MSA_OPT > 0
 
 #ifdef CLANG_BUILD
    #define MSA_SRLI_B(a, b)   __msa_srli_b((v16i8) a, b)
@@ -352,14 +363,14 @@
    out0 += inp4;                                                              \
 }
 
-static void
-png_read_filter_row_up_msa(png_row_info *row_info, png_byte *row,
-    const png_byte *prev_row)
+void
+png_read_filter_row_up_msa(png_row_infop row_info, png_bytep row,
+    png_const_bytep prev_row)
 {
    size_t i, cnt, cnt16, cnt32;
    size_t istop = row_info->rowbytes;
-   png_byte *rp = row;
-   const png_byte *pp = prev_row;
+   png_bytep rp = row;
+   png_const_bytep pp = prev_row;
    v16u8 src0, src1, src2, src3, src4, src5, src6, src7;
 
    for (i = 0; i < (istop >> 6); i++)
@@ -444,14 +455,14 @@ png_read_filter_row_up_msa(png_row_info *row_info, png_byte *row,
    }
 }
 
-static void
-png_read_filter_row_sub4_msa(png_row_info *row_info, png_byte *row,
-    const png_byte *prev_row)
+void
+png_read_filter_row_sub4_msa(png_row_infop row_info, png_bytep row,
+    png_const_bytep prev_row)
 {
    size_t count;
    size_t istop = row_info->rowbytes;
-   png_byte *src = row;
-   png_byte *nxt = row + 4;
+   png_bytep src = row;
+   png_bytep nxt = row + 4;
    int32_t inp0;
    v16u8 src0, src1, src2, src3, src4;
    v16u8 dst0, dst1;
@@ -484,14 +495,14 @@ png_read_filter_row_sub4_msa(png_row_info *row_info, png_byte *row,
    }
 }
 
-static void
-png_read_filter_row_sub3_msa(png_row_info *row_info, png_byte *row,
-    const png_byte *prev_row)
+void
+png_read_filter_row_sub3_msa(png_row_infop row_info, png_bytep row,
+    png_const_bytep prev_row)
 {
    size_t count;
    size_t istop = row_info->rowbytes;
-   png_byte *src = row;
-   png_byte *nxt = row + 3;
+   png_bytep src = row;
+   png_bytep nxt = row + 3;
    int64_t out0;
    int32_t inp0, out1;
    v16u8 src0, src1, src2, src3, src4, dst0, dst1;
@@ -530,14 +541,14 @@ png_read_filter_row_sub3_msa(png_row_info *row_info, png_byte *row,
    }
 }
 
-static void
-png_read_filter_row_avg4_msa(png_row_info *row_info, png_byte *row,
-    const png_byte *prev_row)
+void
+png_read_filter_row_avg4_msa(png_row_infop row_info, png_bytep row,
+    png_const_bytep prev_row)
 {
    size_t i;
-   png_byte *src = row;
-   png_byte *nxt = row;
-   const png_byte *pp = prev_row;
+   png_bytep src = row;
+   png_bytep nxt = row;
+   png_const_bytep pp = prev_row;
    size_t istop = row_info->rowbytes - 4;
    int32_t inp0, inp1, out0;
    v16u8 src0, src1, src2, src3, src4, src5, src6, src7, src8, src9, dst0, dst1;
@@ -582,14 +593,14 @@ png_read_filter_row_avg4_msa(png_row_info *row_info, png_byte *row,
    }
 }
 
-static void
-png_read_filter_row_avg3_msa(png_row_info *row_info, png_byte *row,
-    const png_byte *prev_row)
+void
+png_read_filter_row_avg3_msa(png_row_infop row_info, png_bytep row,
+    png_const_bytep prev_row)
 {
    size_t i;
-   png_byte *src = row;
-   png_byte *nxt = row;
-   const png_byte *pp = prev_row;
+   png_bytep src = row;
+   png_bytep nxt = row;
+   png_const_bytep pp = prev_row;
    size_t istop = row_info->rowbytes - 3;
    int64_t out0;
    int32_t inp0, inp1, out1;
@@ -644,13 +655,13 @@ png_read_filter_row_avg3_msa(png_row_info *row_info, png_byte *row,
    }
 }
 
-static void
-png_read_filter_row_paeth4_msa(png_row_info *row_info, png_byte *row,
-    const png_byte *prev_row)
+void
+png_read_filter_row_paeth4_msa(png_row_infop row_info, png_bytep row,
+    png_const_bytep prev_row)
 {
    int32_t count, rp_end;
-   png_byte *nxt;
-   const png_byte *prev_nxt;
+   png_bytep nxt;
+   png_const_bytep prev_nxt;
    int32_t inp0, inp1, res0;
    v16u8 src0, src1, src2, src3, src4, src5, src6, src7, src8, src9;
    v16u8 src10, src11, src12, src13, dst0, dst1;
@@ -715,13 +726,13 @@ png_read_filter_row_paeth4_msa(png_row_info *row_info, png_byte *row,
    }
 }
 
-static void
-png_read_filter_row_paeth3_msa(png_row_info *row_info, png_byte *row,
-    const png_byte *prev_row)
+void
+png_read_filter_row_paeth3_msa(png_row_infop row_info, png_bytep row,
+    png_const_bytep prev_row)
 {
    int32_t count, rp_end;
-   png_byte *nxt;
-   const png_byte *prev_nxt;
+   png_bytep nxt;
+   png_const_bytep prev_nxt;
    int64_t out0;
    int32_t inp0, inp1, out1;
    int16_t out2;
@@ -795,3 +806,7 @@ png_read_filter_row_paeth3_msa(png_row_info *row_info, png_byte *row,
       nxt += 4;
    }
 }
+
+#endif /* PNG_MIPS_MSA_OPT > 0 */
+#endif /* PNG_MIPS_MSA_IMPLEMENTATION == 1 (intrinsics) */
+#endif /* READ */

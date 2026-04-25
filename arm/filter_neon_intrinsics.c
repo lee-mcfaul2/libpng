@@ -10,7 +10,18 @@
  * and license in png.h
  */
 
-/* [[libpng-1.8]] this is file is included by arm/arm_init.c */
+#include "../pngpriv.h"
+
+#ifdef PNG_READ_SUPPORTED
+
+/* This code requires -mfpu=neon on the command line: */
+#if PNG_ARM_NEON_IMPLEMENTATION == 1 /* intrinsics code from pngpriv.h */
+
+#if defined(_MSC_VER) && !defined(__clang__) && defined(_M_ARM64)
+#  include <arm64_neon.h>
+#else
+#  include <arm_neon.h>
+#endif
 
 /* libpng row pointers are not necessarily aligned to any particular boundary,
  * however this code will only work with appropriate alignment.  arm/arm_init.c
@@ -33,13 +44,15 @@
 #define png_ldr(type,pointer)\
    (temp_pointer = png_ptr(type,pointer), *temp_pointer)
 
-static void
-png_read_filter_row_up_neon(png_row_info *row_info, png_byte *row,
-    const png_byte *prev_row)
+#if PNG_ARM_NEON_OPT > 0
+
+void
+png_read_filter_row_up_neon(png_row_infop row_info, png_bytep row,
+    png_const_bytep prev_row)
 {
-   png_byte *rp = row;
-   png_byte *rp_stop = row + row_info->rowbytes;
-   const png_byte *pp = prev_row;
+   png_bytep rp = row;
+   png_bytep rp_stop = row + row_info->rowbytes;
+   png_const_bytep pp = prev_row;
 
    png_debug(1, "in png_read_filter_row_up_neon");
 
@@ -54,12 +67,12 @@ png_read_filter_row_up_neon(png_row_info *row_info, png_byte *row,
    }
 }
 
-static void
-png_read_filter_row_sub3_neon(png_row_info *row_info, png_byte *row,
-    const png_byte *prev_row)
+void
+png_read_filter_row_sub3_neon(png_row_infop row_info, png_bytep row,
+    png_const_bytep prev_row)
 {
-   png_byte *rp = row;
-   png_byte *rp_stop = row + row_info->rowbytes;
+   png_bytep rp = row;
+   png_bytep rp_stop = row + row_info->rowbytes;
 
    uint8x16_t vtmp = vld1q_u8(rp);
    uint8x8x2_t *vrpt = png_ptr(uint8x8x2_t, &vtmp);
@@ -101,12 +114,12 @@ png_read_filter_row_sub3_neon(png_row_info *row_info, png_byte *row,
    PNG_UNUSED(prev_row)
 }
 
-static void
-png_read_filter_row_sub4_neon(png_row_info *row_info, png_byte *row,
-    const png_byte *prev_row)
+void
+png_read_filter_row_sub4_neon(png_row_infop row_info, png_bytep row,
+    png_const_bytep prev_row)
 {
-   png_byte *rp = row;
-   png_byte *rp_stop = row + row_info->rowbytes;
+   png_bytep rp = row;
+   png_bytep rp_stop = row + row_info->rowbytes;
 
    uint8x8x4_t vdest;
    vdest.val[3] = vdup_n_u8(0);
@@ -133,13 +146,13 @@ png_read_filter_row_sub4_neon(png_row_info *row_info, png_byte *row,
    PNG_UNUSED(prev_row)
 }
 
-static void
-png_read_filter_row_avg3_neon(png_row_info *row_info, png_byte *row,
-    const png_byte *prev_row)
+void
+png_read_filter_row_avg3_neon(png_row_infop row_info, png_bytep row,
+    png_const_bytep prev_row)
 {
-   png_byte *rp = row;
-   const png_byte *pp = prev_row;
-   png_byte *rp_stop = row + row_info->rowbytes;
+   png_bytep rp = row;
+   png_const_bytep pp = prev_row;
+   png_bytep rp_stop = row + row_info->rowbytes;
 
    uint8x16_t vtmp;
    uint8x8x2_t *vrpt;
@@ -201,13 +214,13 @@ png_read_filter_row_avg3_neon(png_row_info *row_info, png_byte *row,
    }
 }
 
-static void
-png_read_filter_row_avg4_neon(png_row_info *row_info, png_byte *row,
-    const png_byte *prev_row)
+void
+png_read_filter_row_avg4_neon(png_row_infop row_info, png_bytep row,
+    png_const_bytep prev_row)
 {
-   png_byte *rp = row;
-   png_byte *rp_stop = row + row_info->rowbytes;
-   const png_byte *pp = prev_row;
+   png_bytep rp = row;
+   png_bytep rp_stop = row + row_info->rowbytes;
+   png_const_bytep pp = prev_row;
 
    uint8x8x4_t vdest;
    vdest.val[3] = vdup_n_u8(0);
@@ -270,13 +283,13 @@ paeth(uint8x8_t a, uint8x8_t b, uint8x8_t c)
    return e;
 }
 
-static void
-png_read_filter_row_paeth3_neon(png_row_info *row_info, png_byte *row,
-    const png_byte *prev_row)
+void
+png_read_filter_row_paeth3_neon(png_row_infop row_info, png_bytep row,
+    png_const_bytep prev_row)
 {
-   png_byte *rp = row;
-   const png_byte *pp = prev_row;
-   png_byte *rp_stop = row + row_info->rowbytes;
+   png_bytep rp = row;
+   png_const_bytep pp = prev_row;
+   png_bytep rp_stop = row + row_info->rowbytes;
 
    uint8x16_t vtmp;
    uint8x8x2_t *vrpt;
@@ -338,13 +351,13 @@ png_read_filter_row_paeth3_neon(png_row_info *row_info, png_byte *row,
    }
 }
 
-static void
-png_read_filter_row_paeth4_neon(png_row_info *row_info, png_byte *row,
-    const png_byte *prev_row)
+void
+png_read_filter_row_paeth4_neon(png_row_infop row_info, png_bytep row,
+    png_const_bytep prev_row)
 {
-   png_byte *rp = row;
-   png_byte *rp_stop = row + row_info->rowbytes;
-   const png_byte *pp = prev_row;
+   png_bytep rp = row;
+   png_bytep rp_stop = row + row_info->rowbytes;
+   png_const_bytep pp = prev_row;
 
    uint8x8_t vlast = vdup_n_u8(0);
    uint8x8x4_t vdest;
@@ -382,3 +395,7 @@ png_read_filter_row_paeth4_neon(png_row_info *row_info, png_byte *row,
       vst4_lane_u32(png_ptr(uint32_t,rp), vdest_val, 0);
    }
 }
+
+#endif /* PNG_ARM_NEON_OPT > 0 */
+#endif /* PNG_ARM_NEON_IMPLEMENTATION == 1 (intrinsics) */
+#endif /* READ */
