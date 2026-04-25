@@ -64,7 +64,6 @@ RUN set -eux \
       grep=3.11-4build1 \
       gzip=1.12-1ubuntu3.1 \
       hostname=3.23+nmu2ubuntu2 \
-      icu-devtools=74.2-1ubuntu3.1 \
       libacl1=2.3.2-1build1.1 \
       libasan8=14.2.0-4ubuntu2~24.04.1 \
       libatomic1=14.2.0-4ubuntu2~24.04.1 \
@@ -86,6 +85,7 @@ RUN set -eux \
       libdb5.3t64=5.3.28+dfsg2-7 \
       liberror-perl=0.17029-2 \
       libexpat1=2.6.1-2ubuntu0.4 \
+      libffi-dev=3.4.6-1build1 \
       libffi8=3.4.6-1build1 \
       libgcc-13-dev=13.3.0-6ubuntu2~24.04.1 \
       libgcc-s1=14.2.0-4ubuntu2~24.04.1 \
@@ -98,8 +98,6 @@ RUN set -eux \
       libgssapi-krb5-2=1.20.1-6ubuntu2.6 \
       libhogweed6t64=3.9.1-2.2build1.1 \
       libhwasan0=14.2.0-4ubuntu2~24.04.1 \
-      libicu-dev=74.2-1ubuntu3.1 \
-      libicu74=74.2-1ubuntu3.1 \
       libidn2-0=2.3.7-2build1.1 \
       libisl23=0.26-3build1.1 \
       libitm1=14.2.0-4ubuntu2~24.04.1 \
@@ -136,8 +134,6 @@ RUN set -eux \
       libtsan2=14.2.0-4ubuntu2~24.04.1 \
       libubsan1=14.2.0-4ubuntu2~24.04.1 \
       libunistring5=1.1-2build1.1 \
-      libxml2=2.9.14+dfsg-1.3ubuntu3.7 \
-      libxml2-dev=2.9.14+dfsg-1.3ubuntu3.7 \
       libzstd1=1.5.5+dfsg2-2build1.1 \
       linux-libc-dev=6.8.0-110.110 \
       make=4.3-4.1build2 \
@@ -154,7 +150,6 @@ RUN set -eux \
  && printf '%s\n' \
       '015b65ef176021c1846ec8b6152167d5d266c1949ec30ee3367e95fa2b2ead27  tar_1.35+dfsg-3build1_amd64.deb' \
       '023cbe9dbf0af87f10e54e342c67571874e412b9950d89c6cd7b010be2e67c3c  zlib1g-dev_1%3a1.3.dfsg-3.1ubuntu2.1_amd64.deb' \
-      '02f2ca4183ea0578c6bbc0849669f0ea8749d254ed48738055a8695fb10ec93a  libxml2-dev_2.9.14+dfsg-1.3ubuntu3.7_amd64.deb' \
       '064dce00ce94e1fc2d33779cb0071088f4c8aac79e85345f2e78a020f7d14699  libbinutils_2.42-4ubuntu2.10_amd64.deb' \
       '0679f198b0128179e46cdf956fb2022c23c758664c00bc8efa0382d509683a8a  libkeyutils1_1.6.3-3build1_amd64.deb' \
       '099bb129f543adc4c14203334b0fa0a909f8bf038c4d56bc9cc7c774ebf78f87  git_1%3a2.43.0-1ubuntu7.3_amd64.deb' \
@@ -189,11 +184,11 @@ RUN set -eux \
       '5701f931ed2cd30644700b0fc1cda7c2214f93a63ef84c0c80e43ce40d2cf1d2  git-man_1%3a2.43.0-1ubuntu7.3_all.deb' \
       '59e1112a23cb6b1db98dd5a37a67aa11b0f75b2c21c9054bb6af5e2e0fd484fc  libgnutls30t64_3.8.3-1.1ubuntu3.5_amd64.deb' \
       '5c3eb1fc954af26da4190204098af489eb558552a89cf5cf099e0ea6aab157c5  libk5crypto3_1.20.1-6ubuntu2.6_amd64.deb' \
-      '612b98f4fcfc6ebc57a1b21c2695174694db5a0b7ff760b5d41032076c792398  libicu-dev_74.2-1ubuntu3.1_amd64.deb' \
       '637e6a7744de08cd331a41f4efd0d24e6ea9064843dea9d1c6ca87bdb5f038a2  libffi8_3.4.6-1build1_amd64.deb' \
       '6abaa6c26f46ef17764c4a753e0e84de1cdadde5634fd2987621fdc617988d19  libselinux1_3.5-2ubuntu2.1_amd64.deb' \
       '6c4e125792e09d55670a132f1c38b740068b3c7b6b0c6a74abe6c3da981f3a61  perl_5.38.2-3.2ubuntu0.2_amd64.deb' \
       '6d97fbc1972633083f08f51ccab433606c97bbceb897c631c66495117ca3406f  libnettle8t64_3.9.1-2.2build1.1_amd64.deb' \
+      '7009959b8a3b77206325026917fb45150ac81bf6139468abc0841d5a29c8619d  libffi-dev_3.4.6-1build1_amd64.deb' \
       '7074b6a2f6367a10d280c00a1cb02e74277709180bab4f2491a2f355ab2d6c20  zlib1g_1%3a1.3.dfsg-3.1ubuntu2.1_amd64.deb' \
       '71a30882e150a73905baa895ed0b0acaea0e3739346cbfa3934bcc3ad3172628  libperl5.38t64_5.38.2-3.2ubuntu0.2_amd64.deb' \
       '72093fb456864db55f1352bfa5e952a94f7abaff64e71dff1fbf001db1984564  libsframe1_2.42-4ubuntu2.10_amd64.deb' \
@@ -201,7 +196,6 @@ RUN set -eux \
       '73de311a21e094e29ac01527d2b52226cc87fde0a5b57032902251b426d92c66  bash_5.2.21-2ubuntu4_amd64.deb' \
       '7438ff160b020a74970672189ecae25d0ca650de6d7f543f12a3134192cffbd9  gcc-13_13.3.0-6ubuntu2~24.04.1_amd64.deb' \
       '74492419b8fda803774b8c9acef6afc5d2f9ff31782635aae212906adae7b277  libbrotli1_1.1.0-2build2_amd64.deb' \
-      '74ab8be7aa487e5cc7d9d228212f538ff96658afcb080335c02fe0f3e384ff7c  libxml2_2.9.14+dfsg-1.3ubuntu3.7_amd64.deb' \
       '7ab24d3057dabf86db8f771ad6e43f073ed86b6b950d6e8ba22cb9fe6707bbc9  libcom-err2_1.47.0-2.4~exp1ubuntu4.1_amd64.deb' \
       '7eb710fe148d224c159ddec1ceb0ba53ead52a80a6793dcdae1474acf20d8f71  rpcsvc-proto_1.4.2-0ubuntu7_amd64.deb' \
       '7ec86d697c3668503c85f308a6832f092075b5880ad002f22185264da0bd4645  libctf0_2.42-4ubuntu2.10_amd64.deb' \
@@ -235,11 +229,9 @@ RUN set -eux \
       'c17e0be76f77a8c15b3217cf9cb58ca63f6cc1974044d2fa4abb33ed7ed7ce1e  perl-modules-5.38_5.38.2-3.2ubuntu0.2_all.deb' \
       'c7535331fbb183c802c3bf4b6b210872dcc12d0421b3212b3c4b940f2c59ed3a  cpp-13_13.3.0-6ubuntu2~24.04.1_amd64.deb' \
       'c8dcd54390e09aba855ec0565d22396dabe52896c47856cf040b9e1ad37d9ff9  libssh-4_0.10.6-2ubuntu0.4_amd64.deb' \
-      'c9a70989678660eed9a1e904c74fa043da8bec8e2036856fc16e31ced79b04f8  libicu74_74.2-1ubuntu3.1_amd64.deb' \
       'c9b3109d868c1e5a26f0bd10e005171420d83f6da84a527aa6293bc350892504  hostname_3.23+nmu2ubuntu2_amd64.deb' \
       'cd689db2691edaa10f37329307292796bb599e722e0505c79e14caaa1fe9a93a  libgcc-13-dev_13.3.0-6ubuntu2~24.04.1_amd64.deb' \
       'cebe6098bb3d66fdacac9dc6fe406a651216d9c00f27c3f9c159d15d96cdf864  libmpc3_1.3.1-1build1.1_amd64.deb' \
-      'cfcad4370d2e0d4abdccf33cb3d0ffef24c095d76e2121e0a1fd1286ea50b404  icu-devtools_74.2-1ubuntu3.1_amd64.deb' \
       'd136073f5e2153f3df11c1d08d66727b9466b28ff483f50085f14bbe3464b5ee  binutils-common_2.42-4ubuntu2.10_amd64.deb' \
       'd3ea567e3c25ebcd272e541ad49c447bc1d7f3720b8081132177ddb3ca9b1f96  gzip_1.12-1ubuntu3.1_amd64.deb' \
       'd557ab12b42ab370249142099fae3cbb979948934e4dfa58c2ab59bf5bbbda73  libbz2-1.0_1.0.8-5.1build0.1_amd64.deb' \
